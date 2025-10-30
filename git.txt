@@ -1,0 +1,5 @@
+git add .
+git commit -m "Fix API routes for Next.js 16 Turbopack compatibility"
+
+git push origin main
+
