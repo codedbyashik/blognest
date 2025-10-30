@@ -1,12 +1,12 @@
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
-// GET comment by ID
+// ✅ GET comment by ID
 export async function GET(
   req: NextRequest,
-  context: { params: { id: string } } // ✅ Promise সরানো
+  { params }: { params: { id: string } }
 ) {
-  const { id } = context.params;
+  const { id } = params;
 
   if (!id) {
     return NextResponse.json({ error: "Comment ID is required" }, { status: 400 });
@@ -29,12 +29,12 @@ export async function GET(
   }
 }
 
-// DELETE comment
+// ✅ DELETE comment
 export async function DELETE(
   req: NextRequest,
-  context: { params: { id: string } } // ✅ Promise সরানো
+  { params }: { params: { id: string } }
 ) {
-  const { id } = context.params;
+  const { id } = params;
 
   if (!id) {
     return NextResponse.json({ error: "Comment ID is required" }, { status: 400 });
@@ -54,12 +54,12 @@ export async function DELETE(
   }
 }
 
-// PUT comment
+// ✅ PUT comment
 export async function PUT(
   req: NextRequest,
-  context: { params: { id: string } } // ✅ Promise সরানো
+  { params }: { params: { id: string } }
 ) {
-  const { id } = context.params;
+  const { id } = params;
   const body = await req.json();
 
   if (!id) {
