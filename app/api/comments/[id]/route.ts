@@ -1,15 +1,15 @@
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
-// ✅ GET comment by ID
-export async function GET(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  const { id } = params;
+// ✅ Context must match Next.js 16
+type Context = { params: Promise<{ id: string }> };
+
+// GET comment by id
+export async function GET(req: NextRequest, { params }: Context) {
+  const { id } = await params; // ✅ await the promise
 
   if (!id) {
-    return NextResponse.json({ error: "Comment ID is required" }, { status: 400 });
+    return NextResponse.json({ error: "ID is required" }, { status: 400 });
   }
 
   try {
@@ -29,15 +29,12 @@ export async function GET(
   }
 }
 
-// ✅ DELETE comment
-export async function DELETE(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  const { id } = params;
+// DELETE comment
+export async function DELETE(req: NextRequest, { params }: Context) {
+  const { id } = await params;
 
   if (!id) {
-    return NextResponse.json({ error: "Comment ID is required" }, { status: 400 });
+    return NextResponse.json({ error: "ID is required" }, { status: 400 });
   }
 
   try {
@@ -54,16 +51,13 @@ export async function DELETE(
   }
 }
 
-// ✅ PUT comment
-export async function PUT(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  const { id } = params;
+// PUT comment (update)
+export async function PUT(req: NextRequest, { params }: Context) {
+  const { id } = await params;
   const body = await req.json();
 
   if (!id) {
-    return NextResponse.json({ error: "Comment ID is required" }, { status: 400 });
+    return NextResponse.json({ error: "ID is required" }, { status: 400 });
   }
 
   try {
@@ -74,9 +68,7 @@ export async function PUT(
 
     const updatedComment = await prisma.comment.update({
       where: { id },
-      data: {
-        content: body.content,
-      },
+      data: { content: body.content },
     });
 
     return NextResponse.json(updatedComment);
