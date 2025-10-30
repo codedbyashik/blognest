@@ -153,7 +153,8 @@ export default function EditBlogPage() {
       <div className="mt-6">
         <h2 className="text-xl font-semibold mb-2">Live Preview</h2>
         <div className="bg-[#1a1a1a] p-4 rounded-lg min-h-[200px] overflow-auto">
-          <Markdown value={form.content} />
+          {/* ✅ Changed 'value' to 'source' */}
+          <Markdown source={form.content} />
         </div>
       </div>
     </div>

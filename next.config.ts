@@ -2,22 +2,22 @@
 const nextConfig = {
   reactStrictMode: true,
   images: {
-    domains: [
-      "cdn.pixabay.com",
-      "i.pinimg.com",
-      "images.unsplash.com",
-      "source.unsplash.com",
-      "images.pexels.com",
-      "picsum.photos",
-      "media.istockphoto.com",
-      "images.freeimages.com",
-      "tse2.mm.bing.net",
+    remotePatterns: [
+      { protocol: 'https', hostname: 'pixabay.com', port: '', pathname: '/**' },
+      { protocol: 'https', hostname: 'cdn.pixabay.com', port: '', pathname: '/**' },
+      { protocol: 'https', hostname: 'i.pinimg.com', port: '', pathname: '/**' },
+      { protocol: 'https', hostname: 'images.unsplash.com', port: '', pathname: '/**' },
+      { protocol: 'https', hostname: 'source.unsplash.com', port: '', pathname: '/**' },
+      { protocol: 'https', hostname: 'images.pexels.com', port: '', pathname: '/**' },
+      { protocol: 'https', hostname: 'picsum.photos', port: '', pathname: '/**' },
+      { protocol: 'https', hostname: 'media.istockphoto.com', port: '', pathname: '/**' },
+      { protocol: 'https', hostname: 'images.freeimages.com', port: '', pathname: '/**' },
+      { protocol: 'https', hostname: 'tse2.mm.bing.net', port: '', pathname: '/**' },
     ],
   },
   compiler: {
     styledComponents: true,
   },
-  // eslint ignore during builds can be removed from here
   headers: async () => [
     {
       source: "/(.*)",
@@ -38,10 +38,7 @@ const nextConfig = {
         { key: "X-Content-Type-Options", value: "nosniff" },
         { key: "X-Frame-Options", value: "SAMEORIGIN" },
         { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-        {
-          key: "Strict-Transport-Security",
-          value: "max-age=31536000; includeSubDomains; preload",
-        },
+        { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains; preload" },
       ],
     },
   ],

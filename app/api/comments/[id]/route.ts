@@ -1,11 +1,16 @@
-import { prisma } from "@/lib/prisma";
+// app/api/comments/[id]/route.ts
 import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
 
-type Context = { params: { id: string } };
+export async function GET(
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }  // ✅ Promise
+) {
+  const { id } = await context.params;  // Promise unwrap
 
-// ✅ GET single comment by ID
-export async function GET(req: NextRequest, { params }: Context) {
-  const { id } = params;
+  if (!id) {
+    return NextResponse.json({ error: "Comment ID is required" }, { status: 400 });
+  }
 
   try {
     const comment = await prisma.comment.findUnique({
@@ -17,50 +22,9 @@ export async function GET(req: NextRequest, { params }: Context) {
       return NextResponse.json({ error: "Comment not found" }, { status: 404 });
     }
 
-    return NextResponse.json(comment);
-  } catch (err: any) {
-    console.error(err);
-    return NextResponse.json({ error: err.message || "Something went wrong" }, { status: 500 });
-  }
-}
-
-// ✅ PUT comment (update)
-export async function PUT(req: NextRequest, { params }: Context) {
-  const { id } = params;
-  const body = await req.json();
-
-  try {
-    const existingComment = await prisma.comment.findUnique({ where: { id } });
-    if (!existingComment) {
-      return NextResponse.json({ error: "Comment not found" }, { status: 404 });
-    }
-
-    const updatedComment = await prisma.comment.update({
-      where: { id },
-      data: { content: body.content },
-    });
-
-    return NextResponse.json(updatedComment);
-  } catch (err: any) {
-    console.error(err);
-    return NextResponse.json({ error: err.message || "Update failed" }, { status: 500 });
-  }
-}
-
-// ✅ DELETE comment
-export async function DELETE(req: NextRequest, { params }: Context) {
-  const { id } = params;
-
-  try {
-    const existingComment = await prisma.comment.findUnique({ where: { id } });
-    if (!existingComment) {
-      return NextResponse.json({ error: "Comment not found" }, { status: 404 });
-    }
-
-    await prisma.comment.delete({ where: { id } });
-    return NextResponse.json({ message: "Comment deleted successfully" });
-  } catch (err: any) {
-    console.error(err);
-    return NextResponse.json({ error: err.message || "Deletion failed" }, { status: 500 });
+    return NextResponse.json(comment, { status: 200 });
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
   }
 }

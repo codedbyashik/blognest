@@ -16,12 +16,12 @@ export default function GoogleLogin({ onClose }: { onClose?: () => void }) {
   const handleGoogleLogin = async () => {
     setLoading(true);
     try {
-      // signInWithGoogle() return value ignore করি
+      // signInWithGoogle() does not return user
       await signInWithGoogle();
       toast.success("Login successful 🎉");
       onClose?.();
 
-      // context থেকে user নাও
+      // context থেকে user নেওয়া
       if (!user) throw new Error("User not found after login");
 
       const path =
@@ -34,7 +34,6 @@ export default function GoogleLogin({ onClose }: { onClose?: () => void }) {
     }
   };
 
-  // যদি user already logged in থাকে, redirect
   useEffect(() => {
     if (!user) return;
 
