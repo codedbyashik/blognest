@@ -1,7 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  swcMinify: true,
   images: {
     domains: [
       "cdn.pixabay.com",
@@ -12,19 +11,13 @@ const nextConfig = {
       "picsum.photos",
       "media.istockphoto.com",
       "images.freeimages.com",
-      "tse2.mm.bing.net", // ✅ নতুন domain add
+      "tse2.mm.bing.net",
     ],
-  },
-  experimental: {
-    turbo: true,
-    appDir: true,
   },
   compiler: {
     styledComponents: true,
   },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
+  // eslint ignore during builds can be removed from here
   headers: async () => [
     {
       source: "/(.*)",
