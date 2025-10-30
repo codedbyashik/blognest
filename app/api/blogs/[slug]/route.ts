@@ -4,9 +4,9 @@ import { NextRequest, NextResponse } from "next/server";
 // GET blog
 export async function GET(
   req: NextRequest,
-  context: { params: Promise<{ slug: string }> }
+  context: { params: { slug: string } } // ❌ Promise নয়, সরাসরি object
 ) {
-  const { slug } = await context.params;
+  const { slug } = context.params;
 
   if (!slug) {
     return NextResponse.json({ error: "Slug is required" }, { status: 400 });
@@ -25,16 +25,19 @@ export async function GET(
     return NextResponse.json(blog);
   } catch (err: any) {
     console.error(err);
-    return NextResponse.json({ error: err.message || "Something went wrong" }, { status: 500 });
+    return NextResponse.json(
+      { error: err.message || "Something went wrong" },
+      { status: 500 }
+    );
   }
 }
 
 // DELETE blog
 export async function DELETE(
   req: NextRequest,
-  context: { params: Promise<{ slug: string }> }
+  context: { params: { slug: string } }
 ) {
-  const { slug } = await context.params;
+  const { slug } = context.params;
 
   if (!slug) {
     return NextResponse.json({ error: "Slug is required" }, { status: 400 });
@@ -50,16 +53,19 @@ export async function DELETE(
     return NextResponse.json({ message: "Blog deleted successfully" });
   } catch (err: any) {
     console.error(err);
-    return NextResponse.json({ error: err.message || "Deletion failed" }, { status: 500 });
+    return NextResponse.json(
+      { error: err.message || "Deletion failed" },
+      { status: 500 }
+    );
   }
 }
 
 // PUT blog
 export async function PUT(
   req: NextRequest,
-  context: { params: Promise<{ slug: string }> }
+  context: { params: { slug: string } }
 ) {
-  const { slug } = await context.params;
+  const { slug } = context.params;
   const body = await req.json();
 
   if (!slug) {
@@ -86,6 +92,9 @@ export async function PUT(
     return NextResponse.json(updatedBlog);
   } catch (err: any) {
     console.error(err);
-    return NextResponse.json({ error: err.message || "Update failed" }, { status: 500 });
+    return NextResponse.json(
+      { error: err.message || "Update failed" },
+      { status: 500 }
+    );
   }
 }

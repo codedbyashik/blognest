@@ -4,9 +4,9 @@ import { NextRequest, NextResponse } from "next/server";
 // GET comment by ID
 export async function GET(
   req: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  context: { params: { id: string } } // ✅ Promise সরানো
 ) {
-  const { id } = await context.params;
+  const { id } = context.params;
 
   if (!id) {
     return NextResponse.json({ error: "Comment ID is required" }, { status: 400 });
@@ -32,9 +32,9 @@ export async function GET(
 // DELETE comment
 export async function DELETE(
   req: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  context: { params: { id: string } } // ✅ Promise সরানো
 ) {
-  const { id } = await context.params;
+  const { id } = context.params;
 
   if (!id) {
     return NextResponse.json({ error: "Comment ID is required" }, { status: 400 });
@@ -57,9 +57,9 @@ export async function DELETE(
 // PUT comment
 export async function PUT(
   req: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  context: { params: { id: string } } // ✅ Promise সরানো
 ) {
-  const { id } = await context.params;
+  const { id } = context.params;
   const body = await req.json();
 
   if (!id) {
