@@ -1,12 +1,12 @@
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
+// Shared context type for cleaner code
+type Context = { params: Promise<{ slug: string }> };
+
 // GET blog
-export async function GET(
-  req: NextRequest,
-  context: { params: { slug: string } } // ❌ Promise নয়, সরাসরি object
-) {
-  const { slug } = context.params;
+export async function GET(req: NextRequest, context: Context) {
+  const { slug } = await context.params;
 
   if (!slug) {
     return NextResponse.json({ error: "Slug is required" }, { status: 400 });
@@ -33,11 +33,8 @@ export async function GET(
 }
 
 // DELETE blog
-export async function DELETE(
-  req: NextRequest,
-  context: { params: { slug: string } }
-) {
-  const { slug } = context.params;
+export async function DELETE(req: NextRequest, context: Context) {
+  const { slug } = await context.params;
 
   if (!slug) {
     return NextResponse.json({ error: "Slug is required" }, { status: 400 });
@@ -61,11 +58,8 @@ export async function DELETE(
 }
 
 // PUT blog
-export async function PUT(
-  req: NextRequest,
-  context: { params: { slug: string } }
-) {
-  const { slug } = context.params;
+export async function PUT(req: NextRequest, context: Context) {
+  const { slug } = await context.params;
   const body = await req.json();
 
   if (!slug) {
