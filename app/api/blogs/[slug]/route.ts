@@ -1,16 +1,13 @@
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
-// ✅ Context টাইপে আর Promise দরকার নেই
 type Context = { params: { slug: string } };
 
-// ✅ GET blog by slug
 export async function GET(req: NextRequest, { params }: Context) {
   const { slug } = params;
 
-  if (!slug) {
+  if (!slug)
     return NextResponse.json({ error: "Slug is required" }, { status: 400 });
-  }
 
   try {
     const blog = await prisma.blog.findUnique({
@@ -18,9 +15,8 @@ export async function GET(req: NextRequest, { params }: Context) {
       include: { author: true, comments: true, likes: true },
     });
 
-    if (!blog) {
+    if (!blog)
       return NextResponse.json({ error: "Blog not found" }, { status: 404 });
-    }
 
     return NextResponse.json(blog);
   } catch (err: any) {
@@ -32,19 +28,15 @@ export async function GET(req: NextRequest, { params }: Context) {
   }
 }
 
-// ✅ DELETE blog
 export async function DELETE(req: NextRequest, { params }: Context) {
   const { slug } = params;
-
-  if (!slug) {
+  if (!slug)
     return NextResponse.json({ error: "Slug is required" }, { status: 400 });
-  }
 
   try {
     const existingBlog = await prisma.blog.findUnique({ where: { slug } });
-    if (!existingBlog) {
+    if (!existingBlog)
       return NextResponse.json({ error: "Blog not found" }, { status: 404 });
-    }
 
     await prisma.blog.delete({ where: { slug } });
     return NextResponse.json({ message: "Blog deleted successfully" });
@@ -57,20 +49,17 @@ export async function DELETE(req: NextRequest, { params }: Context) {
   }
 }
 
-// ✅ PUT blog (update)
 export async function PUT(req: NextRequest, { params }: Context) {
   const { slug } = params;
   const body = await req.json();
 
-  if (!slug) {
+  if (!slug)
     return NextResponse.json({ error: "Slug is required" }, { status: 400 });
-  }
 
   try {
     const existingBlog = await prisma.blog.findUnique({ where: { slug } });
-    if (!existingBlog) {
+    if (!existingBlog)
       return NextResponse.json({ error: "Blog not found" }, { status: 404 });
-    }
 
     const updatedBlog = await prisma.blog.update({
       where: { slug },

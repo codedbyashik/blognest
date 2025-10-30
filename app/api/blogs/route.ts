@@ -1,57 +1,49 @@
-// app/api/blogs/route.ts
 import { prisma } from "@/lib/prisma";
+import { NextRequest, NextResponse } from "next/server";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     const blogs = await prisma.blog.findMany({
-      include: {
-        author: true, // include author info
-      },
       orderBy: { createdAt: "desc" },
+      include: { author: true },
     });
-    return new Response(JSON.stringify(blogs), { status: 200 });
+    return NextResponse.json(blogs);
   } catch (err: any) {
     console.error(err);
-    return new Response(JSON.stringify({ error: err.message }), { status: 500 });
+    return NextResponse.json(
+      { error: err.message || "Failed to fetch blogs" },
+      { status: 500 }
+    );
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-
-    const defaultAuthorId = "default-user-id-1"; // replace with your dev/test user
-    const authorId = body.authorId || defaultAuthorId;
-
-    // Ensure default user exists
-    await prisma.user.upsert({
-      where: { id: authorId },
-      update: {},
-      create: { id: authorId, name: "Default User", email: "default@example.com" },
-    });
-
-    if (!body.title || !body.slug || !body.content) {
-      return new Response(
-        JSON.stringify({ error: "Title, slug, and content are required" }),
+    if (!body.title || !body.content) {
+      return NextResponse.json(
+        { error: "Title and content are required" },
         { status: 400 }
       );
     }
 
-    const blog = await prisma.blog.create({
+    const newBlog = await prisma.blog.create({
       data: {
         title: body.title,
-        slug: body.slug,
         content: body.content,
-        excerpt: body.excerpt || null,
-        tag: body.tag || null,
-        image: body.image || null,
-        author: { connect: { id: authorId } },
+        excerpt: body.excerpt || "",
+        tag: body.tag || "",
+        image: body.image || "",
+        authorId: body.authorId || null,
       },
     });
 
-    return new Response(JSON.stringify(blog), { status: 201 });
+    return NextResponse.json(newBlog, { status: 201 });
   } catch (err: any) {
     console.error(err);
-    return new Response(JSON.stringify({ error: err.message }), { status: 500 });
+    return NextResponse.json(
+      { error: err.message || "Failed to create blog" },
+      { status: 500 }
+    );
   }
 }
