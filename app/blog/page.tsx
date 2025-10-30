@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   Search,
   Cpu,
@@ -14,8 +15,17 @@ import {
   ChevronRight,
 } from "lucide-react";
 
+interface Blog {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt?: string;
+  image?: string;
+  tag?: string;
+}
+
 export default function BlogPage() {
-  const [blogs, setBlogs] = useState<any[]>([]);
+  const [blogs, setBlogs] = useState<Blog[]>([]);
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -31,9 +41,13 @@ export default function BlogPage() {
 
   useEffect(() => {
     const fetchBlogs = async () => {
-      const res = await fetch("/api/blogs");
-      const data = await res.json();
-      setBlogs(data);
+      try {
+        const res = await fetch("/api/blogs");
+        const data: Blog[] = await res.json();
+        setBlogs(data);
+      } catch (error) {
+        console.error("Failed to fetch blogs:", error);
+      }
     };
     fetchBlogs();
   }, []);
@@ -56,7 +70,6 @@ export default function BlogPage() {
           sidebarOpen ? "w-64" : "w-20"
         }`}
       >
-        {/* Expand / Collapse Button */}
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
           className="absolute -right-3 top-6 bg-[#1f1f1f] border border-gray-700 p-2 rounded-full hover:scale-110 transition"
@@ -89,7 +102,9 @@ export default function BlogPage() {
                 }`}
               >
                 {cat.icon}
-                {sidebarOpen && <span className="text-sm font-medium">{cat.name}</span>}
+                {sidebarOpen && (
+                  <span className="text-sm font-medium">{cat.name}</span>
+                )}
               </li>
             ))}
           </ul>
@@ -119,16 +134,22 @@ export default function BlogPage() {
                 className="bg-[#1c1c1c] rounded-2xl overflow-hidden border border-transparent hover:border-purple-500/40 hover:shadow-lg transition transform group"
               >
                 {blog.image && (
-                  <img
+                  <Image
                     src={blog.image}
                     alt={blog.title}
+                    width={400}
+                    height={180}
                     className="w-full h-44 object-cover rounded-t-2xl"
                   />
                 )}
                 <div className="p-4">
-                  <h2 className="text-lg font-semibold text-white line-clamp-2 mb-2">{blog.title}</h2>
+                  <h2 className="text-lg font-semibold text-white line-clamp-2 mb-2">
+                    {blog.title}
+                  </h2>
                   {blog.excerpt && (
-                    <p className="text-gray-400 text-sm line-clamp-3 mb-2">{blog.excerpt}</p>
+                    <p className="text-gray-400 text-sm line-clamp-3 mb-2">
+                      {blog.excerpt}
+                    </p>
                   )}
                   <Link
                     href={`/blog/${encodeURIComponent(blog.slug)}`}

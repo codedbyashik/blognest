@@ -1,17 +1,12 @@
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
-interface Params {
-  params: { slug: string };
-}
-
-// GET blog with optional query filters
-export async function GET(req: NextRequest, context: Params) {
-  const { slug } = context.params;
-  const url = new URL(req.url);
-  const includeComments = url.searchParams.get("includeComments") === "true";
-  const includeLikes = url.searchParams.get("includeLikes") === "true";
-  const limit = Number(url.searchParams.get("limit")) || undefined;
+// GET blog
+export async function GET(
+  req: NextRequest,
+  context: { params: Promise<{ slug: string }> }
+) {
+  const { slug } = await context.params;
 
   if (!slug) {
     return NextResponse.json({ error: "Slug is required" }, { status: 400 });
@@ -20,11 +15,7 @@ export async function GET(req: NextRequest, context: Params) {
   try {
     const blog = await prisma.blog.findUnique({
       where: { slug },
-      include: {
-        author: true,
-        comments: includeComments ? { take: limit, orderBy: { createdAt: "desc" } } : false,
-        likes: includeLikes ? { take: limit, orderBy: { createdAt: "desc" } } : false,
-      },
+      include: { author: true, comments: true, likes: true },
     });
 
     if (!blog) {
@@ -39,8 +30,11 @@ export async function GET(req: NextRequest, context: Params) {
 }
 
 // DELETE blog
-export async function DELETE(req: NextRequest, context: Params) {
-  const { slug } = context.params;
+export async function DELETE(
+  req: NextRequest,
+  context: { params: Promise<{ slug: string }> }
+) {
+  const { slug } = await context.params;
 
   if (!slug) {
     return NextResponse.json({ error: "Slug is required" }, { status: 400 });
@@ -61,8 +55,11 @@ export async function DELETE(req: NextRequest, context: Params) {
 }
 
 // PUT blog
-export async function PUT(req: NextRequest, context: Params) {
-  const { slug } = context.params;
+export async function PUT(
+  req: NextRequest,
+  context: { params: Promise<{ slug: string }> }
+) {
+  const { slug } = await context.params;
   const body = await req.json();
 
   if (!slug) {

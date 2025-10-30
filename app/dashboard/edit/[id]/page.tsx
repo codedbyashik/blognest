@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { toast, Toaster } from "react-hot-toast";
 import dynamic from "next/dynamic";
@@ -10,7 +10,8 @@ const Markdown = dynamic(() => import("@uiw/react-markdown-preview"), { ssr: fal
 
 export default function EditBlogPage() {
   const router = useRouter();
-  const { id } = useParams();
+  const params = useParams();
+  const id = params?.id;
 
   const [form, setForm] = useState({
     title: "",
@@ -23,7 +24,11 @@ export default function EditBlogPage() {
   const [loading, setLoading] = useState(true);
   const [submitLoading, setSubmitLoading] = useState(false);
 
+  const autosaveTimer = useRef<NodeJS.Timeout | null>(null);
+
+  // Fetch blog data
   useEffect(() => {
+    if (!id) return;
     const fetchBlog = async () => {
       try {
         const res = await fetch(`/api/blogs/${id}`);
@@ -45,6 +50,30 @@ export default function EditBlogPage() {
     };
     fetchBlog();
   }, [id]);
+
+  // Auto-save feature
+  useEffect(() => {
+    if (!id) return;
+    if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
+
+    autosaveTimer.current = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/blogs/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(form),
+        });
+        if (!res.ok) throw new Error("Autosave failed");
+        toast.success("Draft saved!", { duration: 1000 });
+      } catch (err: any) {
+        toast.error(err.message);
+      }
+    }, 5000); // auto save every 5 seconds
+
+    return () => {
+      if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
+    };
+  }, [form, id]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -81,6 +110,7 @@ export default function EditBlogPage() {
     }
   };
 
+  if (!id) return <p className="min-h-screen flex items-center justify-center text-gray-100">Blog ID missing</p>;
   if (loading)
     return <p className="min-h-screen flex items-center justify-center text-gray-100">Loading...</p>;
 
@@ -123,7 +153,7 @@ export default function EditBlogPage() {
       <div className="mt-6">
         <h2 className="text-xl font-semibold mb-2">Live Preview</h2>
         <div className="bg-[#1a1a1a] p-4 rounded-lg min-h-[200px] overflow-auto">
-          <Markdown source={form.content} />
+          <Markdown value={form.content} />
         </div>
       </div>
     </div>

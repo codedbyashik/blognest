@@ -1,35 +1,51 @@
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function GET(req: NextRequest) {
-  const blogId = req.nextUrl.searchParams.get("blogId");
-
-  if (!blogId) {
-    return NextResponse.json({ error: "blogId required" }, { status: 400 });
-  }
-
-  try {
-    const comments = await prisma.comment.findMany({
-      where: { blogId },
-      include: { user: true },
-      orderBy: { createdAt: "desc" },
-    });
-
-    return NextResponse.json(comments);
-  } catch (err: any) {
-    console.error(err);
-    return NextResponse.json({ error: err.message || "Something went wrong" }, { status: 500 });
-  }
-}
-
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
-  const { id } = params;
+// GET comment by ID
+export async function GET(
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  const { id } = await context.params;
 
   if (!id) {
     return NextResponse.json({ error: "Comment ID is required" }, { status: 400 });
   }
 
   try {
+    const comment = await prisma.comment.findUnique({
+      where: { id },
+      include: { user: true, blog: true },
+    });
+
+    if (!comment) {
+      return NextResponse.json({ error: "Comment not found" }, { status: 404 });
+    }
+
+    return NextResponse.json(comment);
+  } catch (err: any) {
+    console.error(err);
+    return NextResponse.json({ error: err.message || "Something went wrong" }, { status: 500 });
+  }
+}
+
+// DELETE comment
+export async function DELETE(
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  const { id } = await context.params;
+
+  if (!id) {
+    return NextResponse.json({ error: "Comment ID is required" }, { status: 400 });
+  }
+
+  try {
+    const existingComment = await prisma.comment.findUnique({ where: { id } });
+    if (!existingComment) {
+      return NextResponse.json({ error: "Comment not found" }, { status: 404 });
+    }
+
     await prisma.comment.delete({ where: { id } });
     return NextResponse.json({ message: "Comment deleted successfully" });
   } catch (err: any) {
@@ -38,8 +54,12 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
   }
 }
 
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
-  const { id } = params;
+// PUT comment
+export async function PUT(
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  const { id } = await context.params;
   const body = await req.json();
 
   if (!id) {
@@ -54,7 +74,9 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
     const updatedComment = await prisma.comment.update({
       where: { id },
-      data: { content: body.content },
+      data: {
+        content: body.content,
+      },
     });
 
     return NextResponse.json(updatedComment);
