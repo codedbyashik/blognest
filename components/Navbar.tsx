@@ -24,12 +24,27 @@ const Navbar = () => {
     { name: "Dashboard", href: "/dashboard", protected: true },
   ];
 
+  // Load dark mode from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem("theme");
+    if (saved === "dark") {
+      setDark(true);
+      document.documentElement.classList.add("dark");
+    }
+  }, []);
+
   const toggleTheme = () => {
     setDark(!dark);
-    if (!dark) document.documentElement.classList.add("dark");
-    else document.documentElement.classList.remove("dark");
+    if (!dark) {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+    }
   };
 
+  // Close menus on click outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
@@ -78,7 +93,6 @@ const Navbar = () => {
             );
           })}
 
-          {/* Dark/Light Toggle */}
           <button
             onClick={toggleTheme}
             className="px-3 py-2 rounded-full bg-gray-700 text-gray-200 hover:bg-gray-600 transition"
@@ -94,7 +108,7 @@ const Navbar = () => {
               Login
             </button>
           ) : (
-            <div className="relative">
+            <div className="relative" ref={menuRef}>
               <button
                 onClick={() => setDropdownOpen(!dropdownOpen)}
                 className="flex items-center gap-2 w-auto h-10 rounded-full overflow-hidden border-2 border-purple-600 px-2 bg-gray-800 hover:bg-gray-700 transition"
@@ -104,7 +118,10 @@ const Navbar = () => {
                   alt="avatar"
                   className="w-8 h-8 rounded-full object-cover"
                 />
-                <ChevronDown size={18} className={`${dropdownOpen ? "rotate-180" : ""} transition`} />
+                <ChevronDown
+                  size={18}
+                  className={`${dropdownOpen ? "rotate-180" : ""} transition`}
+                />
               </button>
 
               <AnimatePresence>
@@ -146,8 +163,8 @@ const Navbar = () => {
           )}
         </div>
 
-        {/* Mobile Menu Button */}
-        <div className="md:hidden flex items-center gap-2">
+        {/* Mobile Menu */}
+        <div className="md:hidden flex items-center gap-2 relative" ref={menuRef}>
           {user && (
             <img
               src={user.photoURL || "/images/default-avatar.png"}
@@ -163,6 +180,55 @@ const Navbar = () => {
           >
             {menuOpen ? <X size={26} /> : <Menu size={26} />}
           </button>
+
+          <AnimatePresence>
+            {menuOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+                className="absolute top-16 right-0 w-48 bg-[#1F1F2E] border border-gray-700 rounded-md shadow-lg py-2 z-50 flex flex-col"
+              >
+                {links.map((link) => {
+                  if (link.protected && !user) return null;
+                  return (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      className="px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 rounded-md"
+                      onClick={() => setMenuOpen(false)}
+                    >
+                      {link.name}
+                    </Link>
+                  );
+                })}
+                <button
+                  onClick={toggleTheme}
+                  className="px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 rounded-md flex items-center gap-2"
+                >
+                  {dark ? <Sun size={16} /> : <Moon size={16} />}
+                  {dark ? "Light Mode" : "Dark Mode"}
+                </button>
+                {!user && (
+                  <button
+                    onClick={signInWithGoogle}
+                    className="px-4 py-2 text-sm text-purple-400 hover:bg-gray-700 rounded-md"
+                  >
+                    Login
+                  </button>
+                )}
+                {user && (
+                  <button
+                    onClick={logout}
+                    className="px-4 py-2 text-sm text-red-400 hover:bg-gray-700 rounded-md"
+                  >
+                    Logout
+                  </button>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     </nav>

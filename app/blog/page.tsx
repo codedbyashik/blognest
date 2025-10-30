@@ -1,19 +1,8 @@
-"use client";
-
-import { useState, useEffect } from "react";
+// app/blogs/page.tsx
+import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import Image from "next/image";
-import {
-  Search,
-  Cpu,
-  Code2,
-  Sparkles,
-  Globe,
-  BookOpen,
-  ArrowRight,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
+import { Sparkles, Cpu, Code2, Globe, BookOpen, ArrowRight } from "lucide-react";
 
 interface Blog {
   id: string;
@@ -24,111 +13,63 @@ interface Blog {
   tag?: string;
 }
 
-export default function BlogPage() {
-  const [blogs, setBlogs] = useState<Blog[]>([]);
-  const [search, setSearch] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("All");
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+interface Props {
+  searchParams?: { category?: string; page?: string; };
+}
 
-  const categories = [
-    { name: "All", icon: <Sparkles className="w-5 h-5" /> },
-    { name: "Tech", icon: <Cpu className="w-5 h-5" /> },
-    { name: "Programming", icon: <Code2 className="w-5 h-5" /> },
-    { name: "Inspiration", icon: <Sparkles className="w-5 h-5" /> },
-    { name: "Lifestyle", icon: <Globe className="w-5 h-5" /> },
-    { name: "Tutorial", icon: <BookOpen className="w-5 h-5" /> },
-  ];
+// Server Component
+export default async function BlogPage({ searchParams }: Props) {
+  const selectedCategory = searchParams?.category || "All";
+  const page = parseInt(searchParams?.page || "1");
+  const limit = 9;
+  const skip = (page - 1) * limit;
 
-  useEffect(() => {
-    const fetchBlogs = async () => {
-      try {
-        const res = await fetch("/api/blogs");
-        const data: Blog[] = await res.json();
-        setBlogs(data);
-      } catch (error) {
-        console.error("Failed to fetch blogs:", error);
-      }
-    };
-    fetchBlogs();
-  }, []);
-
-  const filteredBlogs = blogs.filter((blog) => {
-    const matchesCategory =
-      selectedCategory === "All" ||
-      blog.tag?.toLowerCase() === selectedCategory.toLowerCase();
-    const matchesSearch =
-      blog.title.toLowerCase().includes(search.toLowerCase()) ||
-      blog.excerpt?.toLowerCase().includes(search.toLowerCase());
-    return matchesCategory && matchesSearch;
+  // ✅ Fetch blogs with pagination & optional category
+  const blogs = await prisma.blog.findMany({
+    where: selectedCategory !== "All" ? { tag: selectedCategory } : {},
+    take: limit,
+    skip,
+    orderBy: { createdAt: "desc" },
   });
 
+  const totalBlogs = await prisma.blog.count({
+    where: selectedCategory !== "All" ? { tag: selectedCategory } : {},
+  });
+
+  // ✅ Fetch unique categories
+  const categoryRecords = await prisma.blog.findMany({
+    distinct: ["tag"],
+    select: { tag: true },
+  });
+  const categories = categoryRecords.map((b) => b.tag).filter(Boolean) as string[];
+
   return (
-    <div className="min-h-screen flex bg-[#0f0f0f] text-gray-100 transition-all">
+    <div className="min-h-screen flex bg-[#0f0f0f] text-gray-100">
       {/* Sidebar */}
-      <aside
-        className={`relative bg-[#121212]/90 backdrop-blur-lg border-r border-gray-800 transition-all duration-300 ease-in-out ${
-          sidebarOpen ? "w-64" : "w-20"
-        }`}
-      >
-        <button
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="absolute -right-3 top-6 bg-[#1f1f1f] border border-gray-700 p-2 rounded-full hover:scale-110 transition"
-        >
-          {sidebarOpen ? (
-            <ChevronLeft className="w-4 h-4 text-gray-400" />
-          ) : (
-            <ChevronRight className="w-4 h-4 text-gray-400" />
-          )}
-        </button>
-
-        <div className="p-5">
-          <h2
-            className={`font-semibold mb-6 text-transparent bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text transition-all ${
-              sidebarOpen ? "text-xl" : "text-base text-center"
-            }`}
-          >
-            {sidebarOpen ? "Categories" : "📂"}
-          </h2>
-
-          <ul className="space-y-3">
-            {categories.map((cat) => (
-              <li
-                key={cat.name}
-                onClick={() => setSelectedCategory(cat.name)}
-                className={`flex items-center gap-3 cursor-pointer p-2 rounded-lg transition-all duration-300 ${
-                  selectedCategory === cat.name
-                    ? "bg-gradient-to-r from-purple-500/20 to-cyan-500/20 text-purple-400"
-                    : "hover:text-purple-400"
-                }`}
-              >
-                {cat.icon}
-                {sidebarOpen && (
-                  <span className="text-sm font-medium">{cat.name}</span>
-                )}
-              </li>
-            ))}
-          </ul>
-        </div>
+      <aside className="w-64 bg-[#121212]/90 backdrop-blur-lg border-r border-gray-800 p-5 hidden md:block">
+        <h2 className="text-xl font-semibold mb-6 text-transparent bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text">
+          Categories
+        </h2>
+        <ul className="space-y-3">
+          {["All", ...categories].map((cat) => (
+            <li
+              key={cat}
+              className={`cursor-pointer p-2 rounded-lg hover:bg-purple-500/20 hover:text-purple-400 transition ${
+                selectedCategory === cat ? "bg-purple-500/20 text-purple-400" : ""
+              }`}
+            >
+              <Link href={`/blogs?category=${encodeURIComponent(cat)}`}>{cat}</Link>
+            </li>
+          ))}
+        </ul>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 px-6 py-10 transition-all duration-300">
-        {/* Search Bar */}
-        <div className="flex items-center bg-[#181818] border border-gray-800 rounded-full px-4 py-2 mb-8 focus-within:border-purple-500 transition-all">
-          <Search className="w-5 h-5 text-gray-400 mr-2" />
-          <input
-            type="text"
-            placeholder="Search blogs..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="bg-transparent outline-none flex-1 text-sm text-gray-300"
-          />
-        </div>
-
+      <main className="flex-1 px-6 py-10 max-w-6xl mx-auto">
         {/* Blog Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-          {filteredBlogs.length > 0 ? (
-            filteredBlogs.map((blog) => (
+          {blogs.length > 0 ? (
+            blogs.map((blog) => (
               <div
                 key={blog.id}
                 className="bg-[#1c1c1c] rounded-2xl overflow-hidden border border-transparent hover:border-purple-500/40 hover:shadow-lg transition transform group"
@@ -164,6 +105,28 @@ export default function BlogPage() {
             <p className="text-gray-500 italic col-span-full">No blogs found.</p>
           )}
         </div>
+
+        {/* Pagination */}
+        {totalBlogs > limit && (
+          <div className="flex justify-center mt-10 gap-4">
+            {page > 1 && (
+              <Link
+                href={`/blogs?category=${encodeURIComponent(selectedCategory)}&page=${page - 1}`}
+                className="px-4 py-2 bg-gray-800 rounded-lg hover:bg-gray-700 transition"
+              >
+                Previous
+              </Link>
+            )}
+            {page * limit < totalBlogs && (
+              <Link
+                href={`/blogs?category=${encodeURIComponent(selectedCategory)}&page=${page + 1}`}
+                className="px-4 py-2 bg-gray-800 rounded-lg hover:bg-gray-700 transition"
+              >
+                Next
+              </Link>
+            )}
+          </div>
+        )}
       </main>
     </div>
   );

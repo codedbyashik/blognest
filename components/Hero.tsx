@@ -1,42 +1,39 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
+import { useEffect, useRef, useState } from "react";
+import { motion, useMotionValue, useTransform } from "framer-motion";
 
 export default function Hero() {
   const bgRef = useRef<HTMLDivElement>(null);
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
-  // Optimized Mouse movement for parallax
+  // Motion values for smooth animation
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+  const x = useTransform(mouseX, (val) => val * 0.02);
+  const y = useTransform(mouseY, (val) => val * 0.02);
+
+  // Mouse Move Effect (desktop only)
   useEffect(() => {
-    if (window.innerWidth <= 768) return; // mobile devices ignore
-
-    let requestId: number;
+    if (window.innerWidth <= 768) return;
 
     const handleMouseMove = (e: MouseEvent) => {
-      const x = (e.clientX - window.innerWidth / 2) * 0.02;
-      const y = (e.clientY - window.innerHeight / 2) * 0.02;
-      cancelAnimationFrame(requestId);
-      requestId = requestAnimationFrame(() => setMousePos({ x, y }));
+      mouseX.set(e.clientX - window.innerWidth / 2);
+      mouseY.set(e.clientY - window.innerHeight / 2);
     };
 
     window.addEventListener("mousemove", handleMouseMove);
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      cancelAnimationFrame(requestId);
-    };
-  }, []);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, [mouseX, mouseY]);
 
-  // Scroll-based animation (parallax)
+  // Scroll-based parallax
   useEffect(() => {
     const handleScroll = () => {
       if (bgRef.current) {
-        bgRef.current.style.transform = `translateY(${window.scrollY * 0.15}px)`;
+        bgRef.current.style.transform = `translateY(${window.scrollY * 0.12}px)`;
       }
     };
-
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
@@ -46,10 +43,10 @@ export default function Hero() {
       aria-label="Hero Section"
       className="relative w-full h-screen overflow-hidden bg-gradient-to-r from-purple-800 to-cyan-700"
     >
-      {/* Background Image with parallax */}
+      {/* Background Image with optimized lazy load */}
       <motion.div
         ref={bgRef}
-        animate={{ x: mousePos.x, y: mousePos.y }}
+        style={{ x, y }}
         className="absolute inset-0 w-full h-full"
       >
         <Image
@@ -57,13 +54,13 @@ export default function Hero() {
           alt="Hero Background"
           fill
           className="object-cover"
-          priority
+          priority={false} // Lazy load
           sizes="100vw"
         />
         <div className="absolute inset-0 bg-black/50" />
       </motion.div>
 
-      {/* Text Content */}
+      {/* Hero Text */}
       <div className="relative z-10 flex flex-col items-center justify-center h-full text-center px-6 md:px-12 space-y-4">
         <motion.h1
           initial={{ y: 50, opacity: 0 }}
@@ -80,9 +77,9 @@ export default function Hero() {
           transition={{ duration: 1, delay: 0.3 }}
           className="text-gray-300 text-lg md:text-xl max-w-2xl"
         >
-          Discover the latest blogs, stories, and insights from our expert authors. Stay
-          updated on AI, Tech, Business, Life, Design & more. Read, explore, and get
-          inspired with BlogNest.
+          Discover the latest blogs, stories, and insights from our expert authors.
+          Stay updated on AI, Tech, Business, Life, Design & more. Read, explore,
+          and get inspired with BlogNest.
         </motion.p>
 
         <motion.div
@@ -92,6 +89,7 @@ export default function Hero() {
         >
           <Link
             href="/blog"
+            aria-label="Explore Blogs"
             className="mt-6 inline-block bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-full font-semibold transition"
           >
             Explore Blogs
