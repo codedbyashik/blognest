@@ -1,13 +1,25 @@
-import { NextResponse } from "next/server";
+// app/api/comments/[id]/route.ts
 import { prisma } from "@/lib/prisma";
+import { NextRequest, NextResponse } from "next/server";
 
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
-  const { id } = params;
+interface Params {
+  params: Promise<{ id: string }>;
+}
+
+// DELETE comment
+export async function DELETE(req: NextRequest, context: Params) {
+  const { id } = await context.params;
+
+  if (!id) return NextResponse.json({ error: "ID is required" }, { status: 400 });
 
   try {
+    const comment = await prisma.comment.findUnique({ where: { id } });
+    if (!comment) return NextResponse.json({ error: "Comment not found" }, { status: 404 });
+
     await prisma.comment.delete({ where: { id } });
-    return NextResponse.json({ message: "Comment deleted" });
-  } catch (error) {
-    return NextResponse.json({ error: "Failed to delete comment" }, { status: 500 });
+    return NextResponse.json({ message: "Comment deleted successfully" });
+  } catch (err: any) {
+    console.error(err);
+    return NextResponse.json({ error: err.message || "Deletion failed" }, { status: 500 });
   }
 }
