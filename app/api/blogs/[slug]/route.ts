@@ -1,23 +1,35 @@
-// app/api/blogs/[slug]/route.ts
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
 interface Params {
-  params: Promise<{ slug: string }>;
+  params: { slug: string };
 }
 
-// GET blog
+// GET blog with optional query filters
 export async function GET(req: NextRequest, context: Params) {
-  const { slug } = await context.params;
+  const { slug } = context.params;
+  const url = new URL(req.url);
+  const includeComments = url.searchParams.get("includeComments") === "true";
+  const includeLikes = url.searchParams.get("includeLikes") === "true";
+  const limit = Number(url.searchParams.get("limit")) || undefined;
 
-  if (!slug) return NextResponse.json({ error: "Slug is required" }, { status: 400 });
+  if (!slug) {
+    return NextResponse.json({ error: "Slug is required" }, { status: 400 });
+  }
 
   try {
     const blog = await prisma.blog.findUnique({
       where: { slug },
-      include: { author: true, comments: true, likes: true },
+      include: {
+        author: true,
+        comments: includeComments ? { take: limit, orderBy: { createdAt: "desc" } } : false,
+        likes: includeLikes ? { take: limit, orderBy: { createdAt: "desc" } } : false,
+      },
     });
-    if (!blog) return NextResponse.json({ error: "Blog not found" }, { status: 404 });
+
+    if (!blog) {
+      return NextResponse.json({ error: "Blog not found" }, { status: 404 });
+    }
 
     return NextResponse.json(blog);
   } catch (err: any) {
@@ -26,16 +38,42 @@ export async function GET(req: NextRequest, context: Params) {
   }
 }
 
-// PUT blog
-export async function PUT(req: NextRequest, context: Params) {
-  const { slug } = await context.params;
-  const body = await req.json();
+// DELETE blog
+export async function DELETE(req: NextRequest, context: Params) {
+  const { slug } = context.params;
 
-  if (!slug) return NextResponse.json({ error: "Slug is required" }, { status: 400 });
+  if (!slug) {
+    return NextResponse.json({ error: "Slug is required" }, { status: 400 });
+  }
 
   try {
     const existingBlog = await prisma.blog.findUnique({ where: { slug } });
-    if (!existingBlog) return NextResponse.json({ error: "Blog not found" }, { status: 404 });
+    if (!existingBlog) {
+      return NextResponse.json({ error: "Blog not found" }, { status: 404 });
+    }
+
+    await prisma.blog.delete({ where: { slug } });
+    return NextResponse.json({ message: "Blog deleted successfully" });
+  } catch (err: any) {
+    console.error(err);
+    return NextResponse.json({ error: err.message || "Deletion failed" }, { status: 500 });
+  }
+}
+
+// PUT blog
+export async function PUT(req: NextRequest, context: Params) {
+  const { slug } = context.params;
+  const body = await req.json();
+
+  if (!slug) {
+    return NextResponse.json({ error: "Slug is required" }, { status: 400 });
+  }
+
+  try {
+    const existingBlog = await prisma.blog.findUnique({ where: { slug } });
+    if (!existingBlog) {
+      return NextResponse.json({ error: "Blog not found" }, { status: 404 });
+    }
 
     const updatedBlog = await prisma.blog.update({
       where: { slug },
@@ -47,27 +85,10 @@ export async function PUT(req: NextRequest, context: Params) {
         image: body.image,
       },
     });
+
     return NextResponse.json(updatedBlog);
   } catch (err: any) {
     console.error(err);
     return NextResponse.json({ error: err.message || "Update failed" }, { status: 500 });
-  }
-}
-
-// DELETE blog
-export async function DELETE(req: NextRequest, context: Params) {
-  const { slug } = await context.params;
-
-  if (!slug) return NextResponse.json({ error: "Slug is required" }, { status: 400 });
-
-  try {
-    const blog = await prisma.blog.findUnique({ where: { slug } });
-    if (!blog) return NextResponse.json({ error: "Blog not found" }, { status: 404 });
-
-    await prisma.blog.delete({ where: { slug } });
-    return NextResponse.json({ message: "Blog deleted successfully" });
-  } catch (err: any) {
-    console.error(err);
-    return NextResponse.json({ error: err.message || "Deletion failed" }, { status: 500 });
   }
 }
