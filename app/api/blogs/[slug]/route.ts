@@ -6,7 +6,7 @@ export async function GET(
   req: NextRequest,
   context: { params: Promise<{ slug: string }> }
 ) {
-  const { slug } = await context.params;
+  const { slug } = await context.params; // ✅ unwrap Promise
   if (!slug) return NextResponse.json({ error: "Slug is required" }, { status: 400 });
 
   try {
@@ -15,8 +15,9 @@ export async function GET(
       include: { author: true, likes: true, comments: true },
     });
     if (!blog) return NextResponse.json({ error: "Blog not found" }, { status: 404 });
-    return NextResponse.json(blog, { status: 200 });
+    return NextResponse.json(blog);
   } catch (err: any) {
+    console.error(err);
     return NextResponse.json({ error: err.message || "Something went wrong" }, { status: 500 });
   }
 }
@@ -26,6 +27,8 @@ export async function PUT(
   context: { params: Promise<{ slug: string }> }
 ) {
   const { slug } = await context.params;
+  if (!slug) return NextResponse.json({ error: "Slug is required" }, { status: 400 });
+
   const body = await req.json();
 
   try {
@@ -33,8 +36,9 @@ export async function PUT(
       where: { slug },
       data: body,
     });
-    return NextResponse.json(updatedBlog, { status: 200 });
+    return NextResponse.json(updatedBlog);
   } catch (err: any) {
+    console.error(err);
     return NextResponse.json({ error: err.message || "Update failed" }, { status: 500 });
   }
 }
@@ -44,11 +48,13 @@ export async function DELETE(
   context: { params: Promise<{ slug: string }> }
 ) {
   const { slug } = await context.params;
+  if (!slug) return NextResponse.json({ error: "Slug is required" }, { status: 400 });
 
   try {
     await prisma.blog.delete({ where: { slug } });
-    return NextResponse.json({ message: "Blog deleted successfully" }, { status: 200 });
+    return NextResponse.json({ message: "Blog deleted successfully" });
   } catch (err: any) {
+    console.error(err);
     return NextResponse.json({ error: err.message || "Delete failed" }, { status: 500 });
   }
 }
