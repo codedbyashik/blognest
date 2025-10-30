@@ -1,16 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
-// ✅ Context must match Next.js 16
-type Context = { params: Promise<{ id: string }> };
+type Context = { params: { id: string } };
 
-// GET comment by id
+// ✅ GET single comment by ID
 export async function GET(req: NextRequest, { params }: Context) {
-  const { id } = await params; // ✅ await the promise
-
-  if (!id) {
-    return NextResponse.json({ error: "ID is required" }, { status: 400 });
-  }
+  const { id } = params;
 
   try {
     const comment = await prisma.comment.findUnique({
@@ -29,36 +24,10 @@ export async function GET(req: NextRequest, { params }: Context) {
   }
 }
 
-// DELETE comment
-export async function DELETE(req: NextRequest, { params }: Context) {
-  const { id } = await params;
-
-  if (!id) {
-    return NextResponse.json({ error: "ID is required" }, { status: 400 });
-  }
-
-  try {
-    const existingComment = await prisma.comment.findUnique({ where: { id } });
-    if (!existingComment) {
-      return NextResponse.json({ error: "Comment not found" }, { status: 404 });
-    }
-
-    await prisma.comment.delete({ where: { id } });
-    return NextResponse.json({ message: "Comment deleted successfully" });
-  } catch (err: any) {
-    console.error(err);
-    return NextResponse.json({ error: err.message || "Deletion failed" }, { status: 500 });
-  }
-}
-
-// PUT comment (update)
+// ✅ PUT comment (update)
 export async function PUT(req: NextRequest, { params }: Context) {
-  const { id } = await params;
+  const { id } = params;
   const body = await req.json();
-
-  if (!id) {
-    return NextResponse.json({ error: "ID is required" }, { status: 400 });
-  }
 
   try {
     const existingComment = await prisma.comment.findUnique({ where: { id } });
@@ -75,5 +44,23 @@ export async function PUT(req: NextRequest, { params }: Context) {
   } catch (err: any) {
     console.error(err);
     return NextResponse.json({ error: err.message || "Update failed" }, { status: 500 });
+  }
+}
+
+// ✅ DELETE comment
+export async function DELETE(req: NextRequest, { params }: Context) {
+  const { id } = params;
+
+  try {
+    const existingComment = await prisma.comment.findUnique({ where: { id } });
+    if (!existingComment) {
+      return NextResponse.json({ error: "Comment not found" }, { status: 404 });
+    }
+
+    await prisma.comment.delete({ where: { id } });
+    return NextResponse.json({ message: "Comment deleted successfully" });
+  } catch (err: any) {
+    console.error(err);
+    return NextResponse.json({ error: err.message || "Deletion failed" }, { status: 500 });
   }
 }
